@@ -19,5 +19,9 @@ namespace Repository
             FindByCondition(e => e.CompanyId.Equals(companyId), trackChanges)
                 .OrderBy(e => e.Name);
 
+        public Employee GetEmployee(Guid companyId, Guid employeeId, bool trackChanges) =>
+            FindByCondition(e => e.CompanyId.Equals(companyId) && e.Id.Equals(employeeId), trackChanges)
+            .SingleOrDefault();
+
     }
 }

@@ -25,7 +25,7 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpGet]
-        [HttpGet]
+        
         public IActionResult GetEmployeesForCompany(Guid companyId)
         {
             var company = _repository.Company.GetCompany(companyId, trackChanges: false);
@@ -39,6 +39,31 @@ namespace API_ALPHA.Controllers
 
             var employeesDto = _mapper.Map<IEnumerable<EmployeeDTO>>(employeesFromDb);
             return Ok(employeesDto);
+        }
+
+        [HttpGet("{employeeId}")]
+
+        public IActionResult GetEmployeeForCompany(Guid companyId, Guid employeeId)
+        {
+             var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+            if (company == null)
+            {
+                _logger.LogInfo($"Company with id: {companyId}  doesn't exist in the database.");
+                return NotFound();
+            }
+
+            var employee = _repository.Employee.GetEmployee(companyId, employeeId, trackChanges: false);
+            if (employee == null)
+            {
+                _logger.LogInfo($"Employee with id: {employeeId}  doesn't exist in the database.");
+                return NotFound();
+            }
+
+            else
+            {
+                var employeeDto = _mapper.Map<EmployeeDTO>(employee);
+                return Ok(employeeDto);
+            }
         }
     }
 }
