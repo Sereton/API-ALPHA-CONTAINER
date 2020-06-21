@@ -112,5 +112,39 @@ namespace API_ALPHA.Controllers
 
             return NoContent();
         }
+
+        [HttpPut("{id}")]
+
+        public IActionResult UpdateEmployeeForCompany(Guid companyId, Guid id, [FromBody] EmployeeForUpdateDTO
+            employee)
+        {
+            if (employee == null)
+            {
+                _logger.LogError($"The employee submitted is incorrect or has wrong format");
+                return BadRequest("The employee is null");
+            }
+
+            var company = _repository.Company.GetCompany(companyId, trackChanges:false);
+            if (company == null)
+            {
+                _logger.LogInfo("The company submitted was not found");
+                return NotFound();
+            }
+            //trackChanges allows to "record" the modifications made to that item and eventually save them to the DB
+            var employeeEntity = _repository.Employee.GetEmployee(companyId, id, trackChanges: true);
+
+            if (employeeEntity == null)
+            {
+                _logger.LogInfo("The employee submitted was not found");
+                return NotFound();
+            }
+
+            _mapper.Map(employee, employeeEntity);//I copy employee(my DTO to be updated) to employeeEntity(in the DB)
+            _repository.Save();
+            return NoContent();
+
+
+
+        }
     }
 }

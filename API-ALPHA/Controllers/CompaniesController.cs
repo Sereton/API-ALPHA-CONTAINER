@@ -95,6 +95,27 @@ namespace API_ALPHA.Controllers
             return NoContent();
 
         }
+        [HttpPut("{id}")]
+
+        public IActionResult UpdateCompany(Guid id, [FromBody] CompanyForUpdateDTO company)
+        {
+            if (company == null)
+            {
+                _logger.LogError("CompanyForUpdateDto object sent from client is null.");
+                return BadRequest("CompanyForUpdateDto object is null");
+            }
+            var companyToUpdate = _repository.Company.GetCompany(id, trackChanges: true);
+            if (companyToUpdate == null)
+            {
+                _logger.LogInfo($"The company with id: {id} could not be found.");
+                return NotFound();
+            }
+
+            _mapper.Map(company, companyToUpdate);
+            _repository.Save();
+            return NoContent();
+
+        }
 
         [HttpGet("collection/({ids})", Name = "CompanyCollection")]
 
