@@ -89,5 +89,28 @@ namespace API_ALPHA.Controllers
             return CreatedAtRoute("GetEmployeeForCompany",new{ companyId,id = employeeToReturn.Id},
                 employeeToReturn);
         }
+
+        [HttpDelete("{id}")]
+
+        public IActionResult DeleteEmployeeForCompany(Guid companyId, Guid id)
+        {
+            var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+            if (company == null)
+            {
+                _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
+                return NotFound();
+            }
+            var employeeForCompany = _repository.Employee.GetEmployee(companyId, id, trackChanges: false);
+            if (employeeForCompany == null)
+            {
+                _logger.LogInfo($"The employee with id: {id} could not be found.");
+                return NotFound();
+            }
+
+            _repository.Employee.DeleteEmployee(employeeForCompany);
+            _repository.Save();
+
+            return NoContent();
+        }
     }
 }

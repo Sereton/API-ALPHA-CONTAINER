@@ -13,5 +13,7 @@ namespace Contracts
 
         void CreateCompany(Company company);
         /*void CreateCompanies(IEnumerable<Company> companies);*/
+
+        void DeleteCompany(Company company);
     }
 }

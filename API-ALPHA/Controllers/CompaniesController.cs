@@ -80,6 +80,22 @@ namespace API_ALPHA.Controllers
            
         }
 
+        [HttpDelete("{id}")]
+
+        public IActionResult DeleteCompany(Guid id)
+        {
+            var companyToRemove = _repository.Company.GetCompany(id, trackChanges: false);
+            if (companyToRemove == null)
+            {
+                _logger.LogInfo($"The company with id: {id} could not be found.");
+                    return NotFound();
+            }
+            _repository.Company.DeleteCompany(companyToRemove);
+            _repository.Save();
+            return NoContent();
+
+        }
+
         [HttpGet("collection/({ids})", Name = "CompanyCollection")]
 
         public IActionResult GetCompanyCollection([ModelBinder(BinderType = 
