@@ -2,6 +2,7 @@
 using Contracts;
 using Entities.DTO;
 using Entities.Models;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -145,6 +146,39 @@ namespace API_ALPHA.Controllers
 
 
 
+        }
+
+
+        [HttpPatch("{id}")]
+
+        public IActionResult PartiallyUpdateEmployeeForCompany(
+                Guid companyId, Guid id, [FromBody] JsonPatchDocument<EmployeeForUpdateDTO> jsonPatchDocument
+            )
+        {
+            if (jsonPatchDocument == null)
+            {
+                _logger.LogError("Bad patch document");
+                return BadRequest();
+            }
+            var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+            if (company == null)
+            {
+                _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
+                return NotFound();
+            }
+            var employeeEntity = _repository.Employee.GetEmployee(companyId, id, trackChanges: true);
+            if (employeeEntity == null)
+            {
+                _logger.LogInfo($"The employee with id: {id} could not be found.");
+                return NotFound();
+            }
+
+            var employeeToPatch = _mapper.Map<EmployeeForUpdateDTO>(employeeEntity);
+            jsonPatchDocument.ApplyTo(employeeToPatch);
+            _mapper.Map(employeeToPatch, employeeEntity);
+            _repository.Save();
+
+            return NoContent();
         }
     }
 }
