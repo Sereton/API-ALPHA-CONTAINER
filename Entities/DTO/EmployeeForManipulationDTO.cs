@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
+
 using System.ComponentModel.DataAnnotations;
-using System.Text;
+
 
 namespace Entities.DTO
 {
     public abstract class EmployeeForManipulationDTO
     {
-        public class EmployeeForUpdateDTO
-        {
+      
+        
             [Required(ErrorMessage = "The employee must have a name")]
             [MaxLength(30, ErrorMessage = "Maximum length of name is 30 characters")]
             public string Name { get; set; }
@@ -18,6 +18,6 @@ namespace Entities.DTO
             [Required(ErrorMessage = "The employee must have a position")]
             [MaxLength(30, ErrorMessage = "Maximum length of position is 30 characters")]
             public string Position { get; set; }
-        }
+        
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using API_ALPHA.ActionFilters;
 using API_ALPHA.Extensions;
 using AutoMapper;
 using Contracts;
@@ -51,7 +52,7 @@ namespace API_ALPHA
                 options.SuppressModelStateInvalidFilter = true;
             });
 
-
+            services.AddScoped<ValidationFilterAttribute>();
 
         }
 

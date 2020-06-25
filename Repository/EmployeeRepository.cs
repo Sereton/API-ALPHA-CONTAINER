@@ -22,7 +22,7 @@ namespace Repository
                 .OrderBy(e => e.Name).ToListAsync();
 
         public async Task<Employee> GetEmployeeAsync(Guid companyId, Guid id, bool trackChanges) =>
-            await FindByCondition(e => e.CompanyId.Equals(companyId) && e.Id.Equals(id), trackChanges)
+            await FindByCondition(e => (e.CompanyId.Equals(companyId) && e.Id.Equals(id)), trackChanges)
             .SingleOrDefaultAsync();
 
         public void CreateEmployeeForCompany(Guid companyId, Employee employee)

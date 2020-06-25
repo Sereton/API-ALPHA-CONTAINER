@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using API_ALPHA.ActionFilters;
 using API_ALPHA.ModelBinders;
 using AutoMapper;
 using Contracts;
@@ -60,19 +61,10 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpPost]
+        [ServiceFilter(typeof(ValidationFilterAttribute))]
         public async Task<IActionResult> CreateCompany([FromBody] CompanyForCreationDTO company)
         {
-            if (company == null)
-            {
-                _logger.LogError($"CompanyDTO sent by client was null");
-                return BadRequest("CompantyDTO sent is null");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogError("Invalid model state for the Company DTO");
-                return UnprocessableEntity(ModelState);
-            }
+            
 
             var companyEntity = _mapper.Map<Company>(company);
 
@@ -101,20 +93,11 @@ namespace API_ALPHA.Controllers
 
         }
         [HttpPut("{id}")]
+        [ServiceFilter(typeof(ValidationFilterAttribute))]
 
         public  async Task<IActionResult> UpdateCompany(Guid id, [FromBody] CompanyForUpdateDTO company)
         {
-            if (company == null)
-            {
-                _logger.LogError("CompanyForUpdateDto object sent from client is null.");
-                return BadRequest("CompanyForUpdateDto object is null");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogError("Invalid model state for the Company DTO");
-                return UnprocessableEntity(ModelState);
-            }
+            
             var companyToUpdate = await _repository.Company.GetCompanyAsync(id, trackChanges: true);
             if (companyToUpdate == null)
             {

@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using API_ALPHA.ActionFilters;
+using API_ALPHA.ModelBinders;
+using AutoMapper;
 using Contracts;
 using Entities.DTO;
 using Entities.Models;
@@ -6,7 +8,6 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace API_ALPHA.Controllers
@@ -58,7 +59,7 @@ namespace API_ALPHA.Controllers
             if (employee == null)
             {
                 _logger.LogInfo($"Employee with id: {id}  doesn't exist in the database.");
-                return NotFound();
+                return  NotFound();
             }
 
             else
@@ -69,19 +70,10 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpPost]
+        [ServiceFilter(typeof(ValidationFilterAttribute))]
         public async Task<IActionResult> CreateEmployeeForCompany(Guid companyId, [FromBody] EmployeeForCreationDTO employee)
         {
-            if (employee == null)
-            {
-                _logger.LogError("EmployeeForCreationDto object sent from client is null.");
-                return BadRequest("EmployeeForCreationDto object is null");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogError("Invalid model state for the employee DTO");
-                return UnprocessableEntity(ModelState);
-            }
+            
             var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
             if (company == null)
             {
@@ -121,21 +113,12 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpPut("{id}")]
+        [ServiceFilter(typeof(ValidationFilterAttribute))]
 
         public async Task<IActionResult> UpdateEmployeeForCompany(Guid companyId, Guid id, [FromBody] EmployeeForUpdateDTO
             employee)
         {
-            if (employee == null)
-            {
-                _logger.LogError($"The employee submitted is incorrect or has wrong format");
-                return BadRequest("The employee is null");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogError("Invalid model state for the employee for update DTO");
-                return UnprocessableEntity(ModelState);
-            }
+            
             var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges:false);
             if (company == null)
             {
@@ -186,7 +169,7 @@ namespace API_ALPHA.Controllers
 
             var employeeToPatch = _mapper.Map<EmployeeForUpdateDTO>(employeeEntity);
             jsonPatchDocument.ApplyTo(employeeToPatch, ModelState);
-           /* TryValidateModel(employeeToPatch);*/
+            TryValidateModel(employeeToPatch);
             if (!ModelState.IsValid)
             {
                 _logger.LogError("Invalid model state for the patch document");
