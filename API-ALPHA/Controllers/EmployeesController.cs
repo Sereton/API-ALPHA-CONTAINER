@@ -28,15 +28,15 @@ namespace API_ALPHA.Controllers
 
         [HttpGet]
         
-        public IActionResult GetEmployeesForCompany(Guid companyId)
+        public async Task<IActionResult> GetEmployeesForCompany(Guid companyId)
         {
-            var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+            var company =  await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
             if (company == null)
             {
                 _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
             return NotFound();
             }
-            var employeesFromDb = _repository.Employee.GetEmployees(companyId,
+            var employeesFromDb = await _repository.Employee.GetEmployeesAsync(companyId,
             trackChanges: false);
 
             var employeesDto = _mapper.Map<IEnumerable<EmployeeDTO>>(employeesFromDb);
@@ -45,16 +45,16 @@ namespace API_ALPHA.Controllers
 
         [HttpGet("{id}", Name="GetEmployeeForCompany")]
 
-        public IActionResult GetEmployeeForCompany(Guid companyId, Guid id)
+        public  async Task<IActionResult> GetEmployeeForCompany(Guid companyId, Guid id)
         {
-             var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+             var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
             if (company == null)
             {
                 _logger.LogInfo($"Company with id: {companyId}  doesn't exist in the database.");
                 return NotFound();
             }
 
-            var employee = _repository.Employee.GetEmployee(companyId, id, trackChanges: false);
+            var employee = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: false);
             if (employee == null)
             {
                 _logger.LogInfo($"Employee with id: {id}  doesn't exist in the database.");
@@ -69,14 +69,20 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateEmployeeForCompany(Guid companyId, [FromBody] EmployeeForCreationDTO employee)
+        public async Task<IActionResult> CreateEmployeeForCompany(Guid companyId, [FromBody] EmployeeForCreationDTO employee)
         {
             if (employee == null)
             {
                 _logger.LogError("EmployeeForCreationDto object sent from client is null.");
                 return BadRequest("EmployeeForCreationDto object is null");
             }
-            var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogError("Invalid model state for the employee DTO");
+                return UnprocessableEntity(ModelState);
+            }
+            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
             if (company == null)
             {
                 _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
@@ -84,7 +90,7 @@ namespace API_ALPHA.Controllers
             }
             var employeeEntity = _mapper.Map<Employee>(employee);
             _repository.Employee.CreateEmployeeForCompany(companyId, employeeEntity);
-            _repository.Save();
+            await _repository.SaveAsync();
 
             var employeeToReturn = _mapper.Map<EmployeeDTO>(employeeEntity);
             return CreatedAtRoute("GetEmployeeForCompany",new{ companyId,id = employeeToReturn.Id},
@@ -93,15 +99,15 @@ namespace API_ALPHA.Controllers
 
         [HttpDelete("{id}")]
 
-        public IActionResult DeleteEmployeeForCompany(Guid companyId, Guid id)
+        public async Task<IActionResult> DeleteEmployeeForCompany(Guid companyId, Guid id)
         {
-            var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
             if (company == null)
             {
                 _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
                 return NotFound();
             }
-            var employeeForCompany = _repository.Employee.GetEmployee(companyId, id, trackChanges: false);
+            var employeeForCompany = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: false);
             if (employeeForCompany == null)
             {
                 _logger.LogInfo($"The employee with id: {id} could not be found.");
@@ -109,14 +115,14 @@ namespace API_ALPHA.Controllers
             }
 
             _repository.Employee.DeleteEmployee(employeeForCompany);
-            _repository.Save();
+            await _repository.SaveAsync();
 
             return NoContent();
         }
 
         [HttpPut("{id}")]
 
-        public IActionResult UpdateEmployeeForCompany(Guid companyId, Guid id, [FromBody] EmployeeForUpdateDTO
+        public async Task<IActionResult> UpdateEmployeeForCompany(Guid companyId, Guid id, [FromBody] EmployeeForUpdateDTO
             employee)
         {
             if (employee == null)
@@ -125,14 +131,19 @@ namespace API_ALPHA.Controllers
                 return BadRequest("The employee is null");
             }
 
-            var company = _repository.Company.GetCompany(companyId, trackChanges:false);
+            if (!ModelState.IsValid)
+            {
+                _logger.LogError("Invalid model state for the employee for update DTO");
+                return UnprocessableEntity(ModelState);
+            }
+            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges:false);
             if (company == null)
             {
                 _logger.LogInfo("The company submitted was not found");
                 return NotFound();
             }
             //trackChanges allows to "record" the modifications made to that item and eventually save them to the DB
-            var employeeEntity = _repository.Employee.GetEmployee(companyId, id, trackChanges: true);
+            var employeeEntity = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: true);
 
             if (employeeEntity == null)
             {
@@ -141,7 +152,7 @@ namespace API_ALPHA.Controllers
             }
 
             _mapper.Map(employee, employeeEntity);//I copy employee(my DTO to be updated) to employeeEntity(in the DB)
-            _repository.Save();
+            await _repository.SaveAsync();
             return NoContent();
 
 
@@ -151,7 +162,7 @@ namespace API_ALPHA.Controllers
 
         [HttpPatch("{id}")]
 
-        public IActionResult PartiallyUpdateEmployeeForCompany(
+        public async Task<IActionResult> PartiallyUpdateEmployeeForCompany(
                 Guid companyId, Guid id, [FromBody] JsonPatchDocument<EmployeeForUpdateDTO> jsonPatchDocument
             )
         {
@@ -160,13 +171,13 @@ namespace API_ALPHA.Controllers
                 _logger.LogError("Bad patch document");
                 return BadRequest();
             }
-            var company = _repository.Company.GetCompany(companyId, trackChanges: false);
+            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
             if (company == null)
             {
                 _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
                 return NotFound();
             }
-            var employeeEntity = _repository.Employee.GetEmployee(companyId, id, trackChanges: true);
+            var employeeEntity = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: true);
             if (employeeEntity == null)
             {
                 _logger.LogInfo($"The employee with id: {id} could not be found.");
@@ -174,9 +185,15 @@ namespace API_ALPHA.Controllers
             }
 
             var employeeToPatch = _mapper.Map<EmployeeForUpdateDTO>(employeeEntity);
-            jsonPatchDocument.ApplyTo(employeeToPatch);
+            jsonPatchDocument.ApplyTo(employeeToPatch, ModelState);
+           /* TryValidateModel(employeeToPatch);*/
+            if (!ModelState.IsValid)
+            {
+                _logger.LogError("Invalid model state for the patch document");
+                return UnprocessableEntity(ModelState);
+            }
             _mapper.Map(employeeToPatch, employeeEntity);
-            _repository.Save();
+            await _repository.SaveAsync();
 
             return NoContent();
         }

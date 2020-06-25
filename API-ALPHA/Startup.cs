@@ -46,6 +46,11 @@ namespace API_ALPHA
                 .AddXmlDataContractSerializerFormatters()
             .AddCustomCSVFormatter();
 
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.SuppressModelStateInvalidFilter = true;
+            });
+
 
 
         }

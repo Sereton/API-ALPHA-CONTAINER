@@ -4,12 +4,10 @@ using System.Text;
 
 namespace Entities.DTO
 {
-    public class CompanyForUpdateDTO
+    public class CompanyForUpdateDTO : CompanyForManipulationDTO
     {
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string Country { get; set; }
+     
 
-        public IEnumerable<EmployeeForCreationDTO> Employees { get; set; }
+       
     }
 }
