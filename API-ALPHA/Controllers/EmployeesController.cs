@@ -28,16 +28,12 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpGet]
+        [ServiceFilter(typeof(ValidateCompanyExistsAttribute))]
         
         public async Task<IActionResult> GetEmployeesForCompany(Guid companyId)
         {
-            var company =  await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
-            if (company == null)
-            {
-                _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
-            return NotFound();
-            }
-            var employeesFromDb = await _repository.Employee.GetEmployeesAsync(companyId,
+            var company = HttpContext.Items["company"] as Company;
+            var employeesFromDb = await _repository.Employee.GetEmployeesAsync(company.Id,
             trackChanges: false);
 
             var employeesDto = _mapper.Map<IEnumerable<EmployeeDTO>>(employeesFromDb);
@@ -45,41 +41,33 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpGet("{id}", Name="GetEmployeeForCompany")]
+        
+        [ServiceFilter(typeof(ValidateEmployeeForCompanyExistsAttribute))]
 
-        public  async Task<IActionResult> GetEmployeeForCompany(Guid companyId, Guid id)
+        public  IActionResult GetEmployeeForCompany(Guid companyId, Guid id)
         {
-             var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
-            if (company == null)
-            {
-                _logger.LogInfo($"Company with id: {companyId}  doesn't exist in the database.");
-                return NotFound();
-            }
+            
+            var employee = HttpContext.Items["employee"] as Employee;
 
-            var employee = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: false);
-            if (employee == null)
-            {
-                _logger.LogInfo($"Employee with id: {id}  doesn't exist in the database.");
-                return  NotFound();
-            }
 
-            else
-            {
-                var employeeDto = _mapper.Map<EmployeeDTO>(employee);
-                return Ok(employeeDto);
-            }
+
+            
+
+            
+             var employeeDto = _mapper.Map<EmployeeDTO>(employee);
+             return Ok(employeeDto);
+            
         }
 
         [HttpPost]
         [ServiceFilter(typeof(ValidationFilterAttribute))]
+        [ServiceFilter(typeof(ValidateCompanyExistsAttribute))]
         public async Task<IActionResult> CreateEmployeeForCompany(Guid companyId, [FromBody] EmployeeForCreationDTO employee)
         {
+
+          
+
             
-            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
-            if (company == null)
-            {
-                _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
-            return NotFound();
-            }
             var employeeEntity = _mapper.Map<Employee>(employee);
             _repository.Employee.CreateEmployeeForCompany(companyId, employeeEntity);
             await _repository.SaveAsync();
@@ -90,21 +78,15 @@ namespace API_ALPHA.Controllers
         }
 
         [HttpDelete("{id}")]
+        
+        [ServiceFilter(typeof(ValidateEmployeeForCompanyExistsAttribute))]
+
 
         public async Task<IActionResult> DeleteEmployeeForCompany(Guid companyId, Guid id)
         {
-            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
-            if (company == null)
-            {
-                _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
-                return NotFound();
-            }
-            var employeeForCompany = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: false);
-            if (employeeForCompany == null)
-            {
-                _logger.LogInfo($"The employee with id: {id} could not be found.");
-                return NotFound();
-            }
+
+            var employeeForCompany = HttpContext.Items["employee"] as Employee;
+           
 
             _repository.Employee.DeleteEmployee(employeeForCompany);
             await _repository.SaveAsync();
@@ -114,25 +96,18 @@ namespace API_ALPHA.Controllers
 
         [HttpPut("{id}")]
         [ServiceFilter(typeof(ValidationFilterAttribute))]
+        
+        [ServiceFilter(typeof(ValidateEmployeeForCompanyExistsAttribute))]
 
         public async Task<IActionResult> UpdateEmployeeForCompany(Guid companyId, Guid id, [FromBody] EmployeeForUpdateDTO
             employee)
         {
             
-            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges:false);
-            if (company == null)
-            {
-                _logger.LogInfo("The company submitted was not found");
-                return NotFound();
-            }
+       
             //trackChanges allows to "record" the modifications made to that item and eventually save them to the DB
-            var employeeEntity = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: true);
+            var employeeEntity =  HttpContext.Items["employee"] as Employee;
 
-            if (employeeEntity == null)
-            {
-                _logger.LogInfo("The employee submitted was not found");
-                return NotFound();
-            }
+            
 
             _mapper.Map(employee, employeeEntity);//I copy employee(my DTO to be updated) to employeeEntity(in the DB)
             await _repository.SaveAsync();
@@ -144,6 +119,8 @@ namespace API_ALPHA.Controllers
 
 
         [HttpPatch("{id}")]
+        
+        [ServiceFilter(typeof(ValidateEmployeeForCompanyExistsAttribute))]
 
         public async Task<IActionResult> PartiallyUpdateEmployeeForCompany(
                 Guid companyId, Guid id, [FromBody] JsonPatchDocument<EmployeeForUpdateDTO> jsonPatchDocument
@@ -154,19 +131,9 @@ namespace API_ALPHA.Controllers
                 _logger.LogError("Bad patch document");
                 return BadRequest();
             }
-            var company = await _repository.Company.GetCompanyAsync(companyId, trackChanges: false);
-            if (company == null)
-            {
-                _logger.LogInfo($"Company with id: {companyId} doesn't exist in the database.");
-                return NotFound();
-            }
-            var employeeEntity = await _repository.Employee.GetEmployeeAsync(companyId, id, trackChanges: true);
-            if (employeeEntity == null)
-            {
-                _logger.LogInfo($"The employee with id: {id} could not be found.");
-                return NotFound();
-            }
 
+            var employeeEntity = HttpContext.Items["employee"] as Employee;
+         
             var employeeToPatch = _mapper.Map<EmployeeForUpdateDTO>(employeeEntity);
             jsonPatchDocument.ApplyTo(employeeToPatch, ModelState);
             TryValidateModel(employeeToPatch);
