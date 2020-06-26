@@ -4,8 +4,10 @@ using AutoMapper;
 using Contracts;
 using Entities.DTO;
 using Entities.Models;
+using Entities.RequestFeatures;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -30,12 +32,14 @@ namespace API_ALPHA.Controllers
         [HttpGet]
         [ServiceFilter(typeof(ValidateCompanyExistsAttribute))]
         
-        public async Task<IActionResult> GetEmployeesForCompany(Guid companyId)
+        public async Task<IActionResult> GetEmployeesForCompany(Guid companyId, [FromQuery]
+        EmployeeParameters employeeParameters)
         {
             var company = HttpContext.Items["company"] as Company;
-            var employeesFromDb = await _repository.Employee.GetEmployeesAsync(company.Id,
+            var employeesFromDb = await _repository.Employee.GetEmployeesAsync(company.Id,employeeParameters,
             trackChanges: false);
 
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(employeesFromDb.MetaData));
             var employeesDto = _mapper.Map<IEnumerable<EmployeeDTO>>(employeesFromDb);
             return Ok(employeesDto);
         }
